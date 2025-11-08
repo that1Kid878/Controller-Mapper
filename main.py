@@ -158,11 +158,24 @@ def Tab(code):
 
 Selected = False
 def Selection(code):
+    global Selected
     if Button_states.get(code) == 1:
         if Selected:
-            keyboard.release(Key.home)
+            keyboard.release(Key.shift)
         else:
-            keyboard.press(Key.home)
+            keyboard.press(Key.shift)
+        Selected = not Selected
+
+def CopyPaste(code):
+    global Alt
+    if Button_states.get(code) == 1:
+        if keyboard.shift_pressed:
+            keyboard.release(Key.shift)
+        with keyboard.pressed(Key.ctrl):
+            if Alt:
+                keyboard.press('c')
+            else:
+                keyboard.press('v')
 
 def Navigation(code):
     if code == 'ABS_HAT0X':
@@ -179,7 +192,7 @@ def Navigation(code):
 Mapping = {
     'ABS_RZ': Backspace, #ZR
     'ABS_Z': AltBTN, #ZL
-    'BTN_TL': None, #L
+    'BTN_TL': CopyPaste, #L
     'BTN_TR': counter.IncrementCounter, #R
     'BTN_NORTH': Tab, #X
     'BTN_EAST': Space, #A
@@ -216,4 +229,3 @@ while True:
         if Mapping.get(event.code): Mapping[event.code](event.code)
      
     time.sleep(0.01)
-a
