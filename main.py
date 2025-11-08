@@ -22,13 +22,31 @@ symbols = [
     ['<','>',"\\", "%"]
 ]
 
+Button_states = {
+    'ABS_RZ': 0, #ZR
+    'ABS_Z': 0, #ZL
+    'BTN_TL': 0, #L
+    'BTN_TR': 0, #R
+    'BTN_NORTH': 0, #X
+    'BTN_EAST': 0, #A
+    'BTN_WEST': 0, # Y
+    'BTN_SOUTH': 0, #B
+    'ABS_HAT0X': 0, #Nav up or down
+    'ABS_HAT0Y': 0, #Nav left or right
+    'ABS_X': 0, #Left stick left or right
+    'ABS_Y': 0, #Left stick up or down
+    'ABS_RX': 0, #Right stick left or right
+    'ABS_RY': 0, #Right stick up or down
+}
+
 class Counter():
     def __init__(self):
         self.ControllerCounter = 0
         self.last_press_time = time.time()
         self.CounterPressDelay = 1
         
-    def IncrementCounter(self):
+    def IncrementCounter(self, code):
+        if Button_states[code] != 1: return
         print(self.ControllerCounter)
         self.ControllerCounter += 1
         self.ControllerCounter %= 7
@@ -54,14 +72,17 @@ Mapping = {
     'ABS_Y': None, #Left stick up or down
     'ABS_RX': None, #Right stick left or right
     'ABS_RY': None, #Right stick up or down
-    'BTN_THUMBL': None, #Left stick click
-    'BTN_THUMBR': None, #Right stick click
 }
 
 while True:
     events = get_gamepad()
     counter.UpdateCounter()
     for event in events:
-        if (event.ev_type == 'Sync' or event.state == 0): continue
-        if not Mapping.get(event.code): continue
-        Mapping[event.code]()
+        if (event.ev_type == 'Sync'): continue
+        Button_states[event.code] = event.state
+
+        if not Mapping.get(event.code): 
+            print("Unable to find button in Mapping dict or no value in key")
+            continue
+            
+        if Mapping[event.code]: Mapping[event.code](event.code)
