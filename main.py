@@ -175,6 +175,7 @@ Mapping = {
 }
 
 while True:
+    events = []
     try:
         events = get_gamepad()
     except:
