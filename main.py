@@ -124,7 +124,7 @@ class TypeWriter():
             if Alt:
                 number = Numbers[counter.ControllerCounter][Mode]
                 if number == None: return
-                keyboard.type(number)
+                keyboard.type(str(number))
             else:
                 symbol = Symbols[counter.ControllerCounter][Mode]
                 if symbol == None: return
