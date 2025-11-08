@@ -1,5 +1,5 @@
 from inputs import get_gamepad
-from pynput import keyboard
+from pynput.keyboard import Key, Controller
 import types
 import time
 
@@ -10,16 +10,27 @@ Letters = [
     ['m','n','o','p'],
     ['q','r','s','t'],
     ['u','v','w','x'],
-    ['y','z',None, None]
+    ['y','z', None, None]
 ]
 
-symbols = [
+Numbers = [
+    [1,2,3,4],
+    [5,6,7,8],
+    [9,0,None,None],
+    [None,None,None,None],
+    [None,None,None,None],
+    [None,None,None,None],
+    [None,None,None,None],
+]
+
+Symbols = [
     ['(', ')', '{', '}'],
     ['[',']', '_', "@"],
     [';', ':', '.', ','],
     ['#', '=', '!', '?'],
     ['+', '-', '*', '/'],
-    ['<','>',"\\", "%"]
+    ['<','>',"\\", "%"],
+    [None, None, None, None]
 ]
 
 Button_states = {
@@ -39,6 +50,11 @@ Button_states = {
     'ABS_RY': 0, #Right stick up or down
 }
 
+Alt = False
+def AltBTN(code):
+    global Alt
+    Alt = not Alt
+
 class Counter():
     def __init__(self):
         self.ControllerCounter = 0
@@ -47,7 +63,6 @@ class Counter():
         
     def IncrementCounter(self, code):
         if Button_states[code] != 1: return
-        print(self.ControllerCounter)
         self.ControllerCounter += 1
         self.ControllerCounter %= 7
         self.last_press_time = time.time()
@@ -57,32 +72,124 @@ class Counter():
             self.ControllerCounter = 0
 counter = Counter()
 
+keyboard = Controller()
+class TypeWriter():
+    def __init__(self, codeX, codeY, type):
+        self.lastdirection = [0,0]
+        self.direction = [0,0]
+        self.type = type #0 for left, 1 for right
+        self.Deadzone = 8000
+        self.codeX = codeX
+        self.codeY = codeY
+
+    def UpdateDirection(self):
+        X = Button_states[self.codeX]
+        Y = Button_states[self.codeY]
+        self.lastdirection = self.direction.copy()
+
+        #X axis
+        if X > self.Deadzone:
+            self.direction[0] = 1
+        elif X < -self.Deadzone:
+            self.direction[0] = -1
+        else:
+            self.direction[0] = 0
+
+        #Y axis
+        if Y > self.Deadzone:
+            self.direction[1] = 1
+        elif Y < -self.Deadzone:
+            self.direction[1] = -1
+        else:
+            self.direction[1] = 0
+
+    def Write(self):
+        Mode = 0
+        if self.lastdirection == [0,1]: #Up
+            Mode = 0
+        elif self.lastdirection == [1,0]: #Right
+            Mode = 1
+        elif self.lastdirection == [0,-1]: #Down
+            Mode = 2
+        elif self.lastdirection == [-1, 0]: #Left
+            Mode = 3
+
+        if self.type == 0:
+            letter = Letters[counter.ControllerCounter][Mode]
+            if letter == None: return
+            if Alt:
+                letter = letter.upper()
+            keyboard.type(letter)
+        elif self.type == 1:
+            if Alt:
+                number = Numbers[counter.ControllerCounter][Mode]
+                if number == None: return
+                keyboard.type(number)
+            else:
+                symbol = Symbols[counter.ControllerCounter][Mode]
+                if symbol == None: return
+                keyboard.type(symbol)
+
+LeftStickWriter = TypeWriter('ABS_X', 'ABS_Y', 0)
+RightStickWriter = TypeWriter('ABS_RX', 'ABS_RY', 1)
+
+def ManageLeftStick(code):
+    if LeftStickWriter.direction == [0,0] and LeftStickWriter.lastdirection != [0,0]:
+        LeftStickWriter.Write()
+
+def ManageRightStick(code):
+    if RightStickWriter.direction == [0,0] and RightStickWriter.lastdirection != [0,0]:
+        RightStickWriter.Write()
+
+def Backspace(code):
+    if Button_states.get(code) == 255:
+        keyboard.press(Key.backspace)
+
+def Enter(code):
+    if Button_states.get(code) == 1:
+        keyboard.press(Key.enter)
+
+def Space(code):
+    if Button_states.get(code) == 1:
+        keyboard.press(Key.space)
+
+def Tab(code):
+    if Button_states.get(code) == 1:
+        keyboard.press(Key.tab)
+
 Mapping = {
-    'ABS_RZ': None, #ZR
-    'ABS_Z': None, #ZL
+    'ABS_RZ': Backspace, #ZR
+    'ABS_Z': AltBTN, #ZL
     'BTN_TL': None, #L
     'BTN_TR': counter.IncrementCounter, #R
-    'BTN_NORTH': None, #X
-    'BTN_EAST': None, #A
+    'BTN_NORTH': Tab, #X
+    'BTN_EAST': Space, #A
     'BTN_WEST': None, # Y
-    'BTN_SOUTH': None, #B
+    'BTN_SOUTH': Enter, #B
     'ABS_HAT0X': None, #Nav up or down
     'ABS_HAT0Y': None, #Nav left or right
-    'ABS_X': None, #Left stick left or right
-    'ABS_Y': None, #Left stick up or down
-    'ABS_RX': None, #Right stick left or right
-    'ABS_RY': None, #Right stick up or down
+    'ABS_X': ManageLeftStick, #Left stick left or right
+    'ABS_Y': ManageLeftStick, #Left stick up or down
+    'ABS_RX': ManageRightStick, #Right stick left or right
+    'ABS_RY': ManageRightStick, #Right stick up or down
 }
 
 while True:
-    events = get_gamepad()
-    counter.UpdateCounter()
+    try:
+        events = get_gamepad()
+    except:
+        event = []
+    
+    #Update states
     for event in events:
         if (event.ev_type == 'Sync'): continue
         Button_states[event.code] = event.state
 
-        if not Mapping.get(event.code): 
-            print("Unable to find button in Mapping dict or no value in key")
-            continue
-            
-        if Mapping[event.code]: Mapping[event.code](event.code)
+    counter.UpdateCounter()
+    LeftStickWriter.UpdateDirection()
+    RightStickWriter.UpdateDirection()
+
+    for event in events:
+        if Mapping.get(event.code): Mapping[event.code](event.code)
+     
+    time.sleep(0.01)
