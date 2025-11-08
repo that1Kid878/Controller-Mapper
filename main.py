@@ -1,6 +1,5 @@
 from inputs import get_gamepad
 from pynput.keyboard import Key, Controller
-import types
 import time
 
 Letters = [
@@ -157,6 +156,26 @@ def Tab(code):
     if Button_states.get(code) == 1:
         keyboard.press(Key.tab)
 
+Selected = False
+def Selection(code):
+    if Button_states.get(code) == 1:
+        if Selected:
+            keyboard.release(Key.home)
+        else:
+            keyboard.press(Key.home)
+
+def Navigation(code):
+    if code == 'ABS_HAT0X':
+        if Button_states.get(code) == 1:
+            keyboard.press(Key.right)
+        if Button_states.get(code) == -1:
+            keyboard.press(Key.left)
+    else:
+        if Button_states.get(code) == 1:
+            keyboard.press(Key.down)
+        if Button_states.get(code) == -1:
+            keyboard.press(Key.up)
+
 Mapping = {
     'ABS_RZ': Backspace, #ZR
     'ABS_Z': AltBTN, #ZL
@@ -166,12 +185,13 @@ Mapping = {
     'BTN_EAST': Space, #A
     'BTN_WEST': None, # Y
     'BTN_SOUTH': Enter, #B
-    'ABS_HAT0X': None, #Nav up or down
-    'ABS_HAT0Y': None, #Nav left or right
+    'ABS_HAT0X': Navigation, #Nav up or down
+    'ABS_HAT0Y': Navigation, #Nav left or right
     'ABS_X': ManageLeftStick, #Left stick left or right
     'ABS_Y': ManageLeftStick, #Left stick up or down
     'ABS_RX': ManageRightStick, #Right stick left or right
     'ABS_RY': ManageRightStick, #Right stick up or down
+    'BTN_SELECT': Selection #+
 }
 
 while True:
@@ -183,7 +203,9 @@ while True:
     
     #Update states
     for event in events:
+        print(event.code, '||', event.state)
         if (event.ev_type == 'Sync'): continue
+        
         Button_states[event.code] = event.state
 
     counter.UpdateCounter()
@@ -194,3 +216,4 @@ while True:
         if Mapping.get(event.code): Mapping[event.code](event.code)
      
     time.sleep(0.01)
+a
