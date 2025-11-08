@@ -141,7 +141,7 @@ def ManageRightStick(code):
         RightStickWriter.Write()
 
 def Backspace(code):
-    if Button_states.get(code) == 255:
+    if Button_states.get(code) == 1:
         keyboard.press(Key.backspace)
 
 def Enter(code):
@@ -156,47 +156,64 @@ def Tab(code):
     if Button_states.get(code) == 1:
         keyboard.press(Key.tab)
 
-Selected = False
 def Selection(code):
     global Selected
-    if Button_states.get(code) == 1:
-        if Selected:
-            keyboard.release(Key.shift)
-        else:
-            keyboard.press(Key.shift)
-        Selected = not Selected
+    if Button_states.get(code) == 255:
+        keyboard.press(Key.shift)
+    elif Button_states.get(code) == 0:
+        keyboard.release(Key.shift)
 
 def CopyPaste(code):
     global Alt
     if Button_states.get(code) == 1:
-        if keyboard.shift_pressed:
-            keyboard.release(Key.shift)
         with keyboard.pressed(Key.ctrl):
             if Alt:
                 keyboard.press('c')
             else:
                 keyboard.press('v')
 
+def UndoRedo(code):
+    global Alt
+    if Button_states.get(code) == 1:
+        with keyboard.pressed(Key.ctrl):
+            if Alt:
+                keyboard.press('y')
+            else:
+                keyboard.press('z')
+
 def Navigation(code):
-    if code == 'ABS_HAT0X':
-        if Button_states.get(code) == 1:
-            keyboard.press(Key.right)
-        if Button_states.get(code) == -1:
-            keyboard.press(Key.left)
+    if Alt:
+        with keyboard.pressed(Key.ctrl):
+            if code == 'ABS_HAT0X':
+                if Button_states.get(code) == 1:
+                    keyboard.press(Key.right)
+                if Button_states.get(code) == -1:
+                    keyboard.press(Key.left)
+            else:
+                if Button_states.get(code) == 1:
+                    keyboard.press(Key.down)
+                if Button_states.get(code) == -1:
+                    keyboard.press(Key.up)
     else:
-        if Button_states.get(code) == 1:
-            keyboard.press(Key.down)
-        if Button_states.get(code) == -1:
-            keyboard.press(Key.up)
+        if code == 'ABS_HAT0X':
+            if Button_states.get(code) == 1:
+                keyboard.press(Key.right)
+            if Button_states.get(code) == -1:
+                keyboard.press(Key.left)
+        else:
+            if Button_states.get(code) == 1:
+                keyboard.press(Key.down)
+            if Button_states.get(code) == -1:
+                keyboard.press(Key.up)
 
 Mapping = {
-    'ABS_RZ': Backspace, #ZR
+    'ABS_RZ': Selection, #ZR
     'ABS_Z': AltBTN, #ZL
     'BTN_TL': CopyPaste, #L
     'BTN_TR': counter.IncrementCounter, #R
     'BTN_NORTH': Tab, #X
     'BTN_EAST': Space, #A
-    'BTN_WEST': None, # Y
+    'BTN_WEST': Backspace, # Y
     'BTN_SOUTH': Enter, #B
     'ABS_HAT0X': Navigation, #Nav up or down
     'ABS_HAT0Y': Navigation, #Nav left or right
@@ -204,7 +221,7 @@ Mapping = {
     'ABS_Y': ManageLeftStick, #Left stick up or down
     'ABS_RX': ManageRightStick, #Right stick left or right
     'ABS_RY': ManageRightStick, #Right stick up or down
-    'BTN_SELECT': Selection #+
+    'BTN_SELECT': UndoRedo #+
 }
 
 while True:
@@ -216,7 +233,6 @@ while True:
     
     #Update states
     for event in events:
-        print(event.code, '||', event.state)
         if (event.ev_type == 'Sync'): continue
         
         Button_states[event.code] = event.state
