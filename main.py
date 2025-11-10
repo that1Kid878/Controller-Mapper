@@ -3,37 +3,29 @@ from pynput.keyboard import Key, Controller
 import time
 import tkinter as tk
 import threading
+import math
 
 # ----- Important lists -----#
 
 Letters = [
-    ['a','b','c','d'],
-    ['e','f','g','h'],
-    ['i','j','k','l'],
-    ['m','n','o','p'],
-    ['q','r','s','t'],
-    ['u','v','w','x'],
-    ['y','z', '', '']
+    ['a','b','c','d','e','f','g','h'],
+    ['i','j','k','l','m','n','o','p'],
+    ['q','r','s','t','u','v','w','x'],
+    ['y','z', '', '', '', '', '', '']
 ]
 
 Numbers = [
-    [1,2,3,4],
-    [5,6,7,8],
-    [9,0,'',''],
-    ['','','',''],
-    ['','','',''],
-    ['','','',''],
-    ['','','','']
+    [1,2,3,4, 5,6,7,8],
+    [9,0,'','','','','',''],
+    [1,2,3,4, 5,6,7,8],
+    [9,0,'','','','','',''],
 ]
 
 Symbols = [
-    ['(', ')', '{', '}'],
-    ['[',']', '_', "\""],
-    [';', ':', '.', ','],
-    ['#', '=', '!', '?'],
-    ['+', '-', '*', '/'],
-    ['<','>',"\\", "%"],
-    ['@', '', '', '']
+    ['(', ')', '{', '}','[',']', '_', "\""],
+    [';', ':', '.', ',','#', '=', '!', '?'],
+    ['+', '-', '*', '/', '<','>',"\\", "%"],
+    ['@', '', '', '','', '', '', '']
 ]
 
 Button_states = {
@@ -56,10 +48,45 @@ Button_states = {
 # ----- GUI Setup -----#
 root = tk.Tk()
 root.title("Controller Alphabet Cycler")
-root.geometry("300x200")
+root.geometry("400x650-0+100")
 root.attributes('-topmost', True)
 
 tk.Label(root, text="Press R (Right Bumper) to cycle", font=("Arial", 14)).pack(pady=10)
+
+canvas = tk.Canvas(root, width=300, height=550, bg="#a3a3a3") 
+
+#Texts
+circle = canvas.create_oval(50,50,250,250,fill="#878787", outline = '')
+arc = canvas.create_arc(50,50,250,250,fill="#878787",outline = '', start=22.5, extent=45) #"#515151"
+text_radius = 0.7 * 100
+
+corner_displacement = math.ceil((text_radius/math.sqrt(2)) * 1000) / 1000
+Letter1 = canvas.create_text(150, 150 - text_radius, text='a', anchor='center', fill="#FFFFFF", justify='center', font= 24)
+Letter2 = canvas.create_text(150 + corner_displacement, 150 - corner_displacement, text='b', anchor='center', fill="#FFFFFF", justify='center', font= 24)
+Letter3 = canvas.create_text(150 + text_radius, 150, text='c', anchor='center', fill="#FFFFFF", justify='center', font= 24)
+Letter4 = canvas.create_text(150 + corner_displacement, 150 + corner_displacement, text='d', anchor='center', fill="#FFFFFF", justify='center', font= 24)
+Letter5 = canvas.create_text(150, 150 + text_radius, text='e', anchor='center', fill="#FFFFFF", justify='center', font= 24)
+Letter6 = canvas.create_text(150 - corner_displacement, 150 + corner_displacement, text='f', anchor='center', fill="#FFFFFF", justify='center', font= 24)
+Letter7 = canvas.create_text(150 - text_radius, 150, text='g', anchor='center', fill="#FFFFFF", justify='center', font= 24)
+Letter8 = canvas.create_text(150 - corner_displacement, 150 - corner_displacement, text='h', anchor='center', fill="#FFFFFF", justify='center', font= 24)
+LetterCycle = [Letter1, Letter2, Letter3, Letter4, Letter5, Letter6, Letter7, Letter8]
+
+#Symbols
+offset = 250
+circle_sym = canvas.create_oval(50,50+offset,250,250+offset,fill="#878787", outline = '')
+arc_sym = canvas.create_arc(50,50+offset,250,250+offset,fill="#878787",outline = '', start=22.5, extent=45)
+
+Symbol1 = canvas.create_text(150, 150 - text_radius + offset, text='(', anchor='center', fill="#FFFFFF", justify='center', font=24)
+Symbol2 = canvas.create_text(150 + corner_displacement, 150 - corner_displacement + offset, text=')', anchor='center', fill="#FFFFFF", justify='center', font=24)
+Symbol3 = canvas.create_text(150 + text_radius, 150 + offset, text='{', anchor='center', fill="#FFFFFF", justify='center', font=24)
+Symbol4 = canvas.create_text(150 + corner_displacement, 150 + corner_displacement + offset, text='}', anchor='center', fill="#FFFFFF", justify='center', font=24)
+Symbol5 = canvas.create_text(150, 150 + text_radius + offset, text='[', anchor='center', fill="#FFFFFF", justify='center', font=24)
+Symbol6 = canvas.create_text(150 - corner_displacement, 150 + corner_displacement + offset, text=']', anchor='center', fill="#FFFFFF", justify='center', font=24)
+Symbol7 = canvas.create_text(150 - text_radius, 150 + offset, text='_', anchor='center', fill="#FFFFFF", justify='center', font=24)
+Symbol8 = canvas.create_text(150 - corner_displacement, 150 - corner_displacement + offset, text='"', anchor='center', fill="#FFFFFF", justify='center', font=24)
+SymbolCycle = [Symbol1, Symbol2, Symbol3, Symbol4, Symbol5, Symbol6, Symbol7, Symbol8]
+
+canvas.pack()
 
 display_label = tk.Label(root, text="", font=("Arial", 20))
 display_label.pack()
@@ -147,21 +174,25 @@ class Counter():
         self.ControllerCounter = 0
         self.last_press_time = time.time()
         self.CounterPressDelay = 2
+        self.MaxValue = 4
 
-    def CycleRows(self):
-        display_label.config(text=" || ".join(Letters[self.ControllerCounter]) + '\n' + " || ".join(Symbols[self.ControllerCounter]))
+    def UpdateRow(self):
+        for i, TextLabel in enumerate(LetterCycle):
+            canvas.itemconfig(TextLabel, text=Letters[self.ControllerCounter][i])
+        for i, TextLabel in enumerate(SymbolCycle):
+            canvas.itemconfig(TextLabel, text=Symbols[self.ControllerCounter][i])
         
     def IncrementCounter(self, code):
         if Button_states[code] != 1: return
-        self.ControllerCounter = (self.ControllerCounter + 1) % 7
+        self.ControllerCounter = (self.ControllerCounter + 1) % self.MaxValue
         self.last_press_time = time.time()
-        self.CycleRows()
+        self.UpdateRow()
 
     def UpdateCounter(self):
         if time.time() - self.last_press_time > self.CounterPressDelay:
             self.ControllerCounter = 0
             self.last_press_time = time.time()
-            self.CycleRows()
+            self.UpdateRow()
 
 counter = Counter()
 
@@ -171,68 +202,113 @@ class TypeWriter():
         self.lastdirection = [0,0]
         self.direction = [0,0]
         self.type = type #0 for left, 1 for right
-        self.Deadzone = 8000
+        self.Deadzone = 10000
+        self.CenterRadius = 25000
+        self.DiagRatio = 0.3
         self.codeX = codeX
         self.codeY = codeY
+        self.LetterCode = 0
+        self.has_written = True
+        self.InvalidateUpdate = False
 
-    def UpdateDirection(self):
+    def Centered(self):
         X = Button_states[self.codeX]
         Y = Button_states[self.codeY]
+
+        return abs(X) < self.Deadzone and abs(Y) < self.Deadzone
+
+    def UpdateDirection(self):
+        if self.InvalidateUpdate: return
+        X = Button_states[self.codeX]
+        Y = Button_states[self.codeY]
+
+        dx = 0
+        dy = 0
         self.lastdirection = self.direction.copy()
 
-        #X axis
-        if X > self.Deadzone:
-            self.direction[0] = 1
-        elif X < -self.Deadzone:
-            self.direction[0] = -1
+        if abs(X) > abs(Y):
+            if X > self.Deadzone:
+                dx = 1
+            elif X < -self.Deadzone:
+                dx = -1
+            if abs(Y) > self.Deadzone * self.DiagRatio:
+                dy = 1 if Y > 0 else -1
         else:
-            self.direction[0] = 0
+            if Y > self.Deadzone:
+                dy = 1
+            elif Y < -self.Deadzone:
+                dy = -1
+            if abs(X) > self.Deadzone * self.DiagRatio:
+                dx = 1 if X > 0 else -1
 
-        #Y axis
-        if Y > self.Deadzone:
-            self.direction[1] = 1
-        elif Y < -self.Deadzone:
-            self.direction[1] = -1
-        else:
-            self.direction[1] = 0
+        self.direction = [dx, dy]
 
+        #Update direction
+        DirectionMode = {
+            (0, 1): 0,     # UP
+            (1, 1): 1,     # UP_RIGHT
+            (1, 0): 2,     # RIGHT
+            (1, -1): 3,    # DOWN_RIGHT
+            (0, -1): 4,    # DOWN
+            (-1, -1): 5,   # DOWN_LEFT
+            (-1, 0): 6,    # LEFT
+            (-1, 1): 7     # UP_LEFT
+        }
+
+        if math.pow(X,2) + math.pow(Y,2) >= math.pow(self.CenterRadius, 2):
+            self.has_written = False
+
+        if DirectionMode.get(tuple(self.direction)) != None:
+            self.LetterCode = DirectionMode.get(tuple(self.direction))
+            if self.type == 0:
+                canvas.itemconfig(arc, start=67.5 - 45 * self.LetterCode, fill="#515151")
+            elif self.type == 1:
+                canvas.itemconfig(arc_sym, start=67.5 - 45 * self.LetterCode, fill="#515151")
+
+    def DetectRelease(self):
+        X = Button_states[self.codeX]
+        Y = Button_states[self.codeY]
+        if math.pow(X,2) + math.pow(Y,2) < math.pow(self.CenterRadius, 2):
+            if self.has_written: return
+            self.InvalidateUpdate = True
+        if self.Centered():
+            self.InvalidateUpdate = False
+            if self.has_written: 
+                canvas.itemconfig(arc if self.type == 0 else arc_sym, fill="#878787")
+                return
+            self.Write()
     def Write(self):
-        Mode = 0
-        if self.lastdirection == [0,1]: #Up
-            Mode = 0
-        elif self.lastdirection == [1,0]: #Right
-            Mode = 1
-        elif self.lastdirection == [0,-1]: #Down
-            Mode = 2
-        elif self.lastdirection == [-1, 0]: #Left
-            Mode = 3
-
         if self.type == 0:
-            letter = Letters[counter.ControllerCounter][Mode]
+            letter = Letters[counter.ControllerCounter][self.LetterCode]
             if letter == None: return
             if Alt:
                 letter = letter.upper()
             keyboard.type(letter)
+            canvas.itemconfig(arc, fill="#878787")
+            self.has_written = True
+            
         elif self.type == 1:
             if Alt:
-                number = Numbers[counter.ControllerCounter][Mode]
+                number = Numbers[counter.ControllerCounter][self.LetterCode]
                 if number == None: return
                 keyboard.type(str(number))
+                canvas.itemconfig(arc_sym, fill="#878787")
+                self.has_written = True
             else:
-                symbol = Symbols[counter.ControllerCounter][Mode]
+                symbol = Symbols[counter.ControllerCounter][self.LetterCode]
                 if symbol == None: return
                 keyboard.type(symbol)
+                canvas.itemconfig(arc_sym, fill="#878787")
+                self.has_written = True
 
 LeftStickWriter = TypeWriter('ABS_X', 'ABS_Y', 0)
 RightStickWriter = TypeWriter('ABS_RX', 'ABS_RY', 1)
 
 def ManageLeftStick(code):
-    if LeftStickWriter.direction == [0,0] and LeftStickWriter.lastdirection != [0,0]:
-        LeftStickWriter.Write()
+    LeftStickWriter.DetectRelease()
 
 def ManageRightStick(code):
-    if RightStickWriter.direction == [0,0] and RightStickWriter.lastdirection != [0,0]:
-        RightStickWriter.Write()
+    RightStickWriter.DetectRelease()
 
 Mapping = {
     'ABS_RZ': Selection, #ZR
@@ -281,6 +357,6 @@ def Update():
 
 threading.Thread(target=Update, daemon=True).start()
 threading.Thread(target=GetEvents, daemon=True).start()
-root.after(0, counter.CycleRows)
+root.after(0, counter.UpdateRow)
 
 root.mainloop()
