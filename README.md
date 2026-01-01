@@ -8,7 +8,7 @@ I built this project to refresh my memory on python by doing a fun and unique pr
 Python 3.14.0
 
 ### System Flow
-1. User uses R button tocycle through different letters
+1. User uses R button to cycle through different letters
 2. Player moves joystick towards letter or choice
 3. Key is typed
 
